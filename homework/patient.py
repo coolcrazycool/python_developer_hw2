@@ -15,8 +15,8 @@ class Patient(object):
     document_id = model.DocIDValidator()
 
     def __init__(self, *args):
-        self.logger_s = logging.getLogger('covid_19_success')
-        self.logger_e = logging.getLogger("covid_19_errors")
+        # self.logger_s = logging.getLogger('covid_19_success')
+        # self.logger_e = logging.getLogger("covid_19_errors")
 
         if args:
             self.first_name = args[0]
@@ -26,7 +26,7 @@ class Patient(object):
             self.document_type = args[4]
             self.document_id = args[5]
             with log.logger():
-                self.logger_s.info('Был создан новый пациент')
+                log.logger_s.info('Был создан новый пациент')
 
     def __str__(self):
         return f'{self.first_name} {self.last_name} {self.birth_date} {self.phone} {self.document_type} ' \
@@ -52,13 +52,13 @@ class Patient(object):
             with log.logger():
                 log.logger_s.info('Сделана новая запись о пациенте в таблице')
 
-    def __del__(self):
-        del self.logger_s
-        for fh in list(logging.getLogger("covid_19_success").handlers[::-1]):
-            fh.close()
-        del self.logger_e
-        for fh in list(logging.getLogger("covid_19_errors").handlers[::-1]):
-            fh.close()
+    # def __del__(self):
+    #     del self.logger_s
+    #     for fh in list(logging.getLogger("covid_19_success").handlers[::-1]):
+    #         fh.close()
+    #     del self.logger_e
+    #     for fh in list(logging.getLogger("covid_19_errors").handlers[::-1]):
+    #         fh.close()
 
 
 class PatientCollection(object):
