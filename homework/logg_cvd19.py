@@ -1,5 +1,4 @@
 import logging
-from contextlib import contextmanager
 
 logger_s = logging.getLogger("covid_19_success")
 logger_s.setLevel(logging.INFO)
@@ -14,10 +13,3 @@ handler_success.setFormatter(formatter)
 handler_errors.setFormatter(formatter)
 logger_s.addHandler(handler_success)
 logger_e.addHandler(handler_errors)
-
-
-@contextmanager
-def logger():
-    yield
-    handler_success.close()
-    handler_errors.close()

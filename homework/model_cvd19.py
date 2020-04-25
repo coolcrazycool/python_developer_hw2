@@ -1,6 +1,3 @@
-from homework.logg_cvd19 import logger_e, logger_s, logger
-
-
 # TODO Do not logg every time creation of patient
 class AutoStorageDescriptor:
     def __set_name__(self, owner, name):
@@ -18,10 +15,9 @@ class AutoStorageDescriptor:
 
 
 class Validated(AutoStorageDescriptor):
-    with logger():
-        def __set__(self, instance, value):
-            value = self.validate(instance, value)
-            super(Validated, self).__set__(instance, value)
+    def __set__(self, instance, value):
+        value = self.validate(instance, value)
+        super(Validated, self).__set__(instance, value)
 
     @classmethod
     def validate(cls, instance, value):
@@ -31,22 +27,19 @@ class Validated(AutoStorageDescriptor):
 class NameValidator(Validated):
     def validate(self, instance, value):
         if type(value) != str:
-            with logger():
-                logger_e.error("Wrong type")
+            instance.logger_e.error("Wrong type")
             raise TypeError
         if value.isalpha():
             return value.capitalize()
         else:
-            with logger():
-                logger_e.error("Wrong type_name")
+            instance.logger_e.error("Wrong type_name")
             raise ValueError
 
 
 class NonBlank(NameValidator):
     def validate(self, instance, value):
         if self.name in instance.__dict__ and getattr(instance, self.name):
-            with logger():
-                logger_e.error("Переназначение ФИО не предусмотрено")
+            instance.logger_e.error("Переназначение ФИО не предусмотрено")
             raise AttributeError
         return NameValidator.validate(self, instance, value)
 
@@ -54,8 +47,7 @@ class NonBlank(NameValidator):
 class RenameOther(Validated):
     def validate(self, instance, value):
         if self.name in instance.__dict__ and getattr(instance, self.name):
-            with logger():
-                logger_s.info(f"{self.name} было изменено")
+            instance.logger_s.info(f"{self.name} было изменено")
             return value
         return value
 
@@ -65,8 +57,7 @@ class PhoneValidator(RenameOther):
 
     def validate(self, instance, value):
         if type(value) != str:
-            with logger():
-                logger_e.error("Wrong type")
+            instance.logger_e.error("Wrong type")
             raise TypeError
         for symbol in value:
             if symbol not in self.white_lst:
@@ -74,8 +65,7 @@ class PhoneValidator(RenameOther):
         if value.find('8') == 0:
             value = value.replace(value[0], '7', 1)
         if len(value) != 11:
-            with logger():
-                logger_e.error("Wrong attribute phone")
+            instance.logger_e.error("Wrong attribute phone")
             raise ValueError
         return RenameOther.validate(self, instance, value)
 
@@ -83,13 +73,11 @@ class PhoneValidator(RenameOther):
 class BirthValidator(RenameOther):
     def validate(self, instance, value):
         if type(value) != str:
-            with logger():
-                logger_e.error("Wrong type")
+            instance.logger_e.error("Wrong type")
             raise TypeError
         for symbol in value:
             if symbol.isalpha():
-                with logger():
-                    logger_e.error("Wrong value")
+                instance.logger_e.error("Wrong value")
                 raise ValueError
             if str(symbol) == ' ' or symbol == '-':
                 value = value.replace(symbol, '.')
@@ -105,16 +93,14 @@ class DocTypeValidator(RenameOther):
 
     def validate(self, instance, value):
         if type(value) != str:
-            with logger():
-                logger_e.error("Wrong type")
+            instance.logger_e.error("Wrong type")
             raise TypeError
         else:
             if value.capitalize() in self.white_lst:
                 value = value.capitalize()
                 return RenameOther.validate(self, instance, value)
             else:
-                with logger():
-                    logger_e.error("Wrong doc_type")
+                instance.logger_e.error("Wrong doc_type")
                 raise ValueError
 
 
@@ -124,8 +110,7 @@ class DocIDValidator(RenameOther):
 
     def validate(self, instance, value):
         if type(value) != str:
-            with logger():
-                logger_e.error("Wrong type")
+            instance.logger_e.error("Wrong type")
             raise TypeError
         for symbol in value:
             if symbol not in self.white_lst:
@@ -133,7 +118,6 @@ class DocIDValidator(RenameOther):
         if len(value) == self.doc_dict[getattr(instance, 'document_type')]:
             return RenameOther.validate(self, instance, value)
         else:
-            with logger():
-                logger_e.error("Wrong doc_id")
+            instance.logger_e.error("Wrong doc_id")
             raise ValueError
 

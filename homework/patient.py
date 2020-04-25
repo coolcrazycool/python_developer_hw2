@@ -1,7 +1,7 @@
 import csv
 import logging
 import homework.model_cvd19 as model
-import homework.logg_cvd19 as log
+from homework.logg_cvd19 import logger_s, logger_e
 
 FILENAME = 'covid_19_members.csv'
 
@@ -15,8 +15,8 @@ class Patient(object):
     document_id = model.DocIDValidator()
 
     def __init__(self, *args):
-        # self.logger_s = logging.getLogger('covid_19_success')
-        # self.logger_e = logging.getLogger("covid_19_errors")
+        self.logger_s = logging.getLogger('covid_19_success')
+        self.logger_e = logging.getLogger("covid_19_errors")
 
         if args:
             self.first_name = args[0]
@@ -25,8 +25,7 @@ class Patient(object):
             self.phone = args[3]
             self.document_type = args[4]
             self.document_id = args[5]
-            with log.logger():
-                log.logger_s.info('Был создан новый пациент')
+            self.logger_s.info('Был создан новый пациент')
 
     def __str__(self):
         return f'{self.first_name} {self.last_name} {self.birth_date} {self.phone} {self.document_type} ' \
@@ -45,20 +44,18 @@ class Patient(object):
                 writer = csv.writer(file)
                 writer.writerow(data)
         except Exception:
-            with log.logger():
-                log.logger_e.error('Something wrong')
+            self.logger_e.error('Something wrong')
             raise Exception('Something wrong!')
         else:
-            with log.logger():
-                log.logger_s.info('Сделана новая запись о пациенте в таблице')
+            self.logger_s.info('Сделана новая запись о пациенте в таблице')
 
-    # def __del__(self):
-    #     del self.logger_s
-    #     for fh in list(logging.getLogger("covid_19_success").handlers[::-1]):
-    #         fh.close()
-    #     del self.logger_e
-    #     for fh in list(logging.getLogger("covid_19_errors").handlers[::-1]):
-    #         fh.close()
+    def __del__(self):
+        del self.logger_s
+        for fh in list(logging.getLogger("covid_19_success").handlers[::-1]):
+            fh.close()
+        del self.logger_e
+        for fh in list(logging.getLogger("covid_19_errors").handlers[::-1]):
+            fh.close()
 
 
 class PatientCollection(object):
