@@ -1,7 +1,7 @@
 import csv
 import logging
 import homework.model_cvd19 as model
-from homework.logg_cvd19 import logger_s, logger_e
+from homework.logg_cvd19 import logger_s, logger_e, handler_errors, handler_success
 
 FILENAME = 'covid_19_members.csv'
 
@@ -14,28 +14,26 @@ class Patient(object):
     document_type = model.DocTypeValidator()
     document_id = model.DocIDValidator()
 
-    def __init__(self, *args):
+    def __init__(self, first_name, last_name, birth_date, phone, document_type, document_id):
         self.logger_s = logging.getLogger('covid_19_success')
         self.logger_e = logging.getLogger("covid_19_errors")
 
-        if args:
-            self.first_name = args[0]
-            self.last_name = args[1]
-            self.birth_date = args[2]
-            self.phone = args[3]
-            self.document_type = args[4]
-            self.document_id = args[5]
+        if first_name and last_name and birth_date and phone and document_type and document_id:
+            self.first_name = first_name
+            self.last_name = last_name
+            self.birth_date = birth_date
+            self.phone = phone
+            self.document_type = document_type
+            self.document_id = document_id
             self.logger_s.info('Был создан новый пациент')
 
     def __str__(self):
         return f'{self.first_name} {self.last_name} {self.birth_date} {self.phone} {self.document_type} ' \
                f'{self.document_id}'
 
-    @classmethod
-    def create(cls, *args):
-        super(Patient, cls).__init__(*args)
-        cls.created = Patient(*args)
-        return cls.created
+    @staticmethod
+    def create(first_name, last_name, birth_date, phone, document_type, document_id):
+        return Patient(first_name, last_name, birth_date, phone, document_type, document_id)
 
     def save(self):
         data = [self.first_name, self.last_name, self.birth_date, self.phone, self.document_type, self.document_id]
@@ -43,19 +41,27 @@ class Patient(object):
             with open(FILENAME, "a", newline="", encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow(data)
-        except Exception:
-            self.logger_e.error('Something wrong')
-            raise Exception('Something wrong!')
+        except UnicodeError:
+            self.logger_e.error('Something wrong with your decoder in SAVE')
+            raise UnicodeError('Something wrong with your decoder in SAVE')
+        except IsADirectoryError:
+            self.logger_e.error('Cant write in directory. Problem in SAVE')
+            raise IsADirectoryError('Cant write in directory. Problem in SAVE')
+        except PermissionError:
+            self.logger_e.error('U cant write in this file. Problem in SAVE')
+            raise PermissionError('U cant write in this file. Problem in SAVE')
+        except OSError:
+            self.logger_e.error('Some System Error. Problem in SAVE')
+            raise OSError('Some System Error. Problem in SAVE')
+        except RuntimeError:
+            self.logger_e.error('Something unexpected. Problem in SAVE')
+            raise RuntimeError('Something unexpected. Problem in SAVE')
         else:
             self.logger_s.info('Сделана новая запись о пациенте в таблице')
 
     def __del__(self):
-        del self.logger_s
-        for fh in list(logging.getLogger("covid_19_success").handlers[::-1]):
-            fh.close()
-        del self.logger_e
-        for fh in list(logging.getLogger("covid_19_errors").handlers[::-1]):
-            fh.close()
+        handler_errors.close()
+        handler_success.close()
 
 
 class PatientCollection(object):
@@ -68,11 +74,10 @@ class PatientCollection(object):
         return self
 
     def __next__(self):
-        inFile = open(self.path, 'r', encoding='utf-8')
-        inFile.seek(self.fileBytePos)
-        data = inFile.readline()
-        self.fileBytePos = inFile.tell()
-        inFile.close()
+        with open(self.path, 'r', encoding='utf-8') as inFile:
+            inFile.seek(self.fileBytePos)
+            data = inFile.readline()
+            self.fileBytePos = inFile.tell()
         if not data or not self.count:
             raise StopIteration
         self.count -= 1
