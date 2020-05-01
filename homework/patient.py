@@ -1,7 +1,7 @@
 import csv
 import logging
 import homework.model_cvd19 as model
-from homework.logg_cvd19 import logger_s, logger_e, handler_errors, handler_success
+from homework.logg_cvd19 import logger_s, logger_e, handler_errors, handler_success, decorated_log
 
 FILENAME = 'covid_19_members.csv'
 
@@ -14,6 +14,7 @@ class Patient(object):
     document_type = model.DocTypeValidator()
     document_id = model.DocIDValidator()
 
+    @decorated_log
     def __init__(self, first_name, last_name, birth_date, phone, document_type, document_id):
         self.logger_s = logging.getLogger('covid_19_success')
         self.logger_e = logging.getLogger("covid_19_errors")
@@ -25,7 +26,6 @@ class Patient(object):
             self.phone = phone
             self.document_type = document_type
             self.document_id = document_id
-            self.logger_s.info('Был создан новый пациент')
 
     def __str__(self):
         return f'{self.first_name} {self.last_name} {self.birth_date} {self.phone} {self.document_type} ' \
@@ -35,29 +35,12 @@ class Patient(object):
     def create(first_name, last_name, birth_date, phone, document_type, document_id):
         return Patient(first_name, last_name, birth_date, phone, document_type, document_id)
 
+    @decorated_log
     def save(self):
         data = [self.first_name, self.last_name, self.birth_date, self.phone, self.document_type, self.document_id]
-        try:
-            with open(FILENAME, "a", newline="", encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(data)
-        except UnicodeError:
-            self.logger_e.error('Something wrong with your decoder in SAVE')
-            raise UnicodeError('Something wrong with your decoder in SAVE')
-        except IsADirectoryError:
-            self.logger_e.error('Cant write in directory. Problem in SAVE')
-            raise IsADirectoryError('Cant write in directory. Problem in SAVE')
-        except PermissionError:
-            self.logger_e.error('U cant write in this file. Problem in SAVE')
-            raise PermissionError('U cant write in this file. Problem in SAVE')
-        except OSError:
-            self.logger_e.error('Some System Error. Problem in SAVE')
-            raise OSError('Some System Error. Problem in SAVE')
-        except RuntimeError:
-            self.logger_e.error('Something unexpected. Problem in SAVE')
-            raise RuntimeError('Something unexpected. Problem in SAVE')
-        else:
-            self.logger_s.info('Сделана новая запись о пациенте в таблице')
+        with open(FILENAME, "a", newline="", encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(data)
 
     def __del__(self):
         handler_errors.close()
@@ -73,6 +56,7 @@ class PatientCollection(object):
     def __iter__(self):
         return self
 
+    @decorated_log
     def __next__(self):
         with open(self.path, 'r', encoding='utf-8') as inFile:
             inFile.seek(self.fileBytePos)
@@ -81,6 +65,7 @@ class PatientCollection(object):
         if not data or not self.count:
             raise StopIteration
         self.count -= 1
+        print(self.fileBytePos)
         return Patient(*data.split(','))
 
     def limit(self, count):

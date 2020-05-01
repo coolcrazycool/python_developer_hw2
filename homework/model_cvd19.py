@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from homework.logg_cvd19 import decorated_log
 
 
 # TODO Do not logg every time creation of patient
@@ -27,26 +28,26 @@ class Validated(AutoStorageDescriptor):
 
 
 class NameValidator(Validated):
+    @decorated_log
     def validate(self, instance, value):
         if not isinstance(value, str):
-            instance.logger_e.error("Wrong type for f_name or l_name")
             raise TypeError("Wrong type for f_name or l_name")
         if value.isalpha():
             return value.capitalize()
         else:
-            instance.logger_e.error("Wrong value for f_name or s_name")
             raise ValueError("Wrong value for f_name or s_name")
 
 
 class NonBlank(NameValidator):
+    @decorated_log
     def validate(self, instance, value):
         if self.name in instance.__dict__ and getattr(instance, self.name):
-            instance.logger_e.error("Переназначение ФИО не предусмотрено")
             raise AttributeError("F_name or L_name can not be changed")
         return super(NonBlank, self).validate(instance, value)
 
 
 class RenameOther(Validated):
+    @decorated_log
     def validate(self, instance, value):
         if self.name in instance.__dict__ and getattr(instance, self.name):
             instance.logger_s.info(f"{self.name} было изменено")
@@ -57,9 +58,9 @@ class RenameOther(Validated):
 class PhoneValidator(RenameOther):
     white_lst = [str(i) for i in range(0, 10)]
 
+    @decorated_log
     def validate(self, instance, value):
         if not isinstance(value, str):
-            instance.logger_e.error("Wrong type for Phone")
             raise TypeError("Wrong type for Phone")
         for symbol in value:
             if symbol not in self.white_lst:
@@ -67,19 +68,17 @@ class PhoneValidator(RenameOther):
         if value.find('8') == 0:
             value = value.replace(value[0], '7', 1)
         if len(value) != 11:
-            instance.logger_e.error("Wrong attribute phone")
             raise ValueError("Wrong attribute phone")
         return RenameOther.validate(self, instance, value)
 
 
 class BirthValidator(RenameOther):
+    @decorated_log
     def validate(self, instance, value):
         if not isinstance(value, str):
-            instance.logger_e.error("Wrong type for birthday")
             raise TypeError("Wrong type for birthday")
         for symbol in value:
             if symbol.isalpha():
-                instance.logger_e.error("Wrong value for birthday")
                 raise ValueError("Wrong value for birthday")
             if str(symbol) == ' ' or symbol == '-':
                 value = value.replace(symbol, '.')
@@ -93,16 +92,15 @@ class BirthValidator(RenameOther):
 class DocTypeValidator(RenameOther):
     white_lst = ['Паспорт', 'Заграничный паспорт', 'Водительские права']
 
+    @decorated_log
     def validate(self, instance, value):
         if not isinstance(value, str):
-            instance.logger_e.error("Wrong type for doc_type")
             raise TypeError("Wrong type for doc_type")
         else:
             if value.capitalize() in self.white_lst:
                 value = value.capitalize()
                 return RenameOther.validate(self, instance, value)
             else:
-                instance.logger_e.error("Wrong doc_type value")
                 raise ValueError("Wrong doc_type value")
 
 
@@ -110,9 +108,9 @@ class DocIDValidator(RenameOther):
     doc_dict = {'Паспорт': 10, 'Водительские права': 10, 'Заграничный паспорт': 9}
     white_lst = [str(i) for i in range(0, 10)]
 
+    @decorated_log
     def validate(self, instance, value):
         if not isinstance(value, str):
-            instance.logger_e.error("Wrong type for doc_id")
             raise TypeError("Wrong type for doc_id")
         for symbol in value:
             if symbol not in self.white_lst:
@@ -120,6 +118,5 @@ class DocIDValidator(RenameOther):
         if len(value) == self.doc_dict[getattr(instance, 'document_type')]:
             return RenameOther.validate(self, instance, value)
         else:
-            instance.logger_e.error("Wrong doc_id value")
             raise ValueError("Wrong doc_id value")
 
