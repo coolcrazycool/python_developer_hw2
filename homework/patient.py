@@ -1,10 +1,10 @@
 import csv
 import logging
-import homework.model_cvd19 as model
-from homework.logg_cvd19 import logger_s, logger_e, handler_errors, handler_success, decorated_log
+import model_cvd19 as model
+from logg_cvd19 import logger_s, logger_e, handler_errors, handler_success, decorated_log
 import sqlite3
 
-FILENAME = 'covid_19_members.csv'
+FILENAME = 'covid_19_db.db'
 
 
 class Patient(object):
@@ -40,12 +40,10 @@ class Patient(object):
     def save(self):
         conn = sqlite3.connect('covid_19_db.db')
         cursor = conn.cursor()
-        cursor.execute("""CREATE TABLE IF NOT EXISTS covid_members
-                (first_name char(30) not null, last_name char(30) not null, birth_date char(10) not null,
-                phone char(11) not null , document_type char(20) not null , document_id char(10) not null UNIQUE);""")
 
         data = [self.first_name, self.last_name, self.birth_date, self.phone, self.document_type, self.document_id]
-        cursor.execute('INSERT INTO covid_members VALUES(?, ?, ?, ?, ?, ?)', data)
+        cursor.execute("INSERT INTO covid_members VALUES (?, ?, ?, ?, ?, ?)", data)
+
         conn.commit()
         cursor.close()
         conn.close()
@@ -58,7 +56,6 @@ class Patient(object):
 class PatientCollection(object):
     def __init__(self, path):
         self.path = path
-        self.fileBytePos = 0
         self.id = 1
         self.count = None
         self.conn = sqlite3.connect(self.path)
@@ -69,12 +66,20 @@ class PatientCollection(object):
 
     @decorated_log
     def __next__(self):
-        data = self.cursor.execute(f"SELECT * FROM covid_members WHERE id = {self.id}")
-        self.id += 1
-        if not data or (self.count and self.id == self.count):
-            self.conn.close()
+        if self.count:
+            if self.id == self.count+1:
+                self.cursor.close()
+                self.conn.close()
+                raise StopIteration
+        read_line = self.cursor.execute(f"SELECT first_name, last_name, birth_date, phone, document_type, document_id"
+                                        f" FROM covid_members WHERE ROWID = {self.id}")
+        data = list(read_line)
+        data = list(*data)
+        if not data:
             self.cursor.close()
+            self.conn.close()
             raise StopIteration
+        self.id += 1
         return Patient(*data)
 
     def limit(self, count):

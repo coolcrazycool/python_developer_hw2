@@ -1,6 +1,6 @@
 GOOD_LOG_FILE = "success.log"
 ERROR_LOG_FILE = "errors.log"
-CSV_PATH = "covid_19_members.csv"
+CSV_PATH = "covid_19_db.db"
 PHONE_FORMAT = "79160000000"  # Здесь запишите телефон +7-916-000-00-00 в том формате, в котором вы храните телефоны
 
 PASSPORT_TYPE = "Паспорт"  # тип документа, когда он паспорт

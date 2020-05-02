@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from homework.logg_cvd19 import decorated_log
+from logg_cvd19 import decorated_log
 
 
 # TODO Do not logg every time creation of patient

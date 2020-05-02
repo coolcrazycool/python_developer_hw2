@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 
 logger_s = logging.getLogger("covid_19_success")
 logger_s.setLevel(logging.INFO)
@@ -17,6 +18,7 @@ logger_e.addHandler(handler_errors)
 
 def decorated_log(func):
     def wrapper(*args, **kwargs):
+        key = None
         if func.__name__ == '__init__':
             key = 'init'
         if func.__name__ == 'save':
@@ -37,6 +39,15 @@ def decorated_log(func):
         except ValueError:
             logger_e.error('Ошибка с типом данных')
             raise ValueError("Ошибка с данными")
+        except sqlite3.IntegrityError:
+            logger_e.error('Данные с таким документом уже существуют')
+            raise sqlite3.IntegrityError("Данные с таким документом уже существуют")
+        except sqlite3.OperationalError:
+            logger_e.error('Проблемы с подключением к базе')
+            raise sqlite3.OperationalError("Проблемы с подключением к базе")
+        except sqlite3.DatabaseError:
+            logger_e.error('Ошибка внутри базы')
+            raise sqlite3.DatabaseError("Ошибка внутри базы")
         except IsADirectoryError:
             logger_e.error('Cant write in directory. Problem in SAVE')
             raise IsADirectoryError('Cant write in directory. Problem in SAVE')
