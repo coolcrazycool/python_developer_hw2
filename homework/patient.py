@@ -2,6 +2,7 @@ import csv
 import logging
 import homework.model_cvd19 as model
 from homework.logg_cvd19 import logger_s, logger_e, handler_errors, handler_success, decorated_log
+import sqlite3
 
 FILENAME = 'covid_19_members.csv'
 
@@ -37,10 +38,17 @@ class Patient(object):
 
     @decorated_log
     def save(self):
+        conn = sqlite3.connect('covid_19_db.db')
+        cursor = conn.cursor()
+        cursor.execute("""CREATE TABLE IF NOT EXISTS covid_members
+                (first_name char(30) not null, last_name char(30) not null, birth_date char(10) not null,
+                phone char(11) not null , document_type char(20) not null , document_id char(10) not null UNIQUE);""")
+
         data = [self.first_name, self.last_name, self.birth_date, self.phone, self.document_type, self.document_id]
-        with open(FILENAME, "a", newline="", encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerow(data)
+        cursor.execute('INSERT INTO covid_members VALUES(?, ?, ?, ?, ?, ?)', data)
+        conn.commit()
+        cursor.close()
+        conn.close()
 
     def __del__(self):
         handler_errors.close()
@@ -51,22 +59,23 @@ class PatientCollection(object):
     def __init__(self, path):
         self.path = path
         self.fileBytePos = 0
-        self.count = -1
+        self.id = 1
+        self.count = None
+        self.conn = sqlite3.connect(self.path)
+        self.cursor = self.conn.cursor()
 
     def __iter__(self):
         return self
 
     @decorated_log
     def __next__(self):
-        with open(self.path, 'r', encoding='utf-8') as inFile:
-            inFile.seek(self.fileBytePos)
-            data = inFile.readline()
-            self.fileBytePos = inFile.tell()
-        if not data or not self.count:
+        data = self.cursor.execute(f"SELECT * FROM covid_members WHERE id = {self.id}")
+        self.id += 1
+        if not data or (self.count and self.id == self.count):
+            self.conn.close()
+            self.cursor.close()
             raise StopIteration
-        self.count -= 1
-        print(self.fileBytePos)
-        return Patient(*data.split(','))
+        return Patient(*data)
 
     def limit(self, count):
         self.count = count
