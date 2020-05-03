@@ -55,15 +55,17 @@ def cli():
 @click.command()
 @click.argument('f_name')
 @click.argument('s_name')
-@click.option('--birth-date')
-@click.option('--phone')
-@click.option('--document-type')
+@click.option('--birth-date', cls=OptionEatAll, type= str)
+@click.option('--phone', cls=OptionEatAll, type=str)
+@click.option('--document-type', cls=OptionEatAll, type=str)
 @click.option('--document-number', cls=OptionEatAll, type=str)
 def create(f_name, s_name, birth_date, phone, document_type, document_number):
-    document_id = ''
-    for current in document_number:
-        document_id += current
-    patient = Patient(f_name, s_name, birth_date, phone, document_type, document_id)
+    print(f_name, s_name, birth_date, phone, document_type, document_number)
+    birth_date = ''.join(birth_date)
+    phone = ''.join(phone)
+    document_type = ' '.join(document_type)
+    document_number = ''.join(document_number)
+    patient = Patient(f_name, s_name, birth_date, phone, document_type, document_number)
     patient.save()
     del patient
 
