@@ -60,7 +60,6 @@ def cli():
 @click.option('--document-type', cls=OptionEatAll, type=str)
 @click.option('--document-number', cls=OptionEatAll, type=str)
 def create(f_name, s_name, birth_date, phone, document_type, document_number):
-    print(f_name, s_name, birth_date, phone, document_type, document_number)
     birth_date = ''.join(birth_date)
     phone = ''.join(phone)
     document_type = ' '.join(document_type)
